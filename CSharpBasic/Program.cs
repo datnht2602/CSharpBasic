@@ -6,6 +6,7 @@ using System.IO;
 using static System.Environment;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 
 namespace CSharpBasic
 {
@@ -22,7 +23,8 @@ namespace CSharpBasic
             Analysers.Add(new AlexAnalyser(folderPath));
             Analysers.Add(new DerekAnalyser(folderPath));
 
-
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             foreach (IDataAnalyser analyser in Analysers)
             {
                 Console.WriteLine($"Author is {analyser.Author} ");
@@ -31,7 +33,12 @@ namespace CSharpBasic
                     Console.WriteLine("String: " + str);
                 }
             }
-            
+            stopwatch.Stop();
+
+            // Get the elapsed time
+            TimeSpan elapsed = stopwatch.Elapsed;
+
+            Console.WriteLine("Taken time: " + elapsed.TotalMilliseconds + " milliseconds");
             Console.WriteLine("Press any ken to exit.");
             Console.ReadKey();
         }

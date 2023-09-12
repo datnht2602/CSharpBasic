@@ -18,10 +18,10 @@ using System.IO;
 
         public IEnumerable<string> GetTopTenStrings(string path)
         {
-            string[] result = { };
+        string[] result = {};
             try
             {
-                Dictionary<int, byte> wordFrequency = new Dictionary<int, byte>();
+                List<int> hashcodeWord = new List<int>();
 
                 string[] datFiles = Directory.GetFiles(path, "*.dat");
                 foreach (string filePath in datFiles)
@@ -37,64 +37,84 @@ using System.IO;
                             foreach (var word in words)
                             {
                                 string normalizedWord = word.ToLower();
-                                if (wordFrequency.ContainsKey(normalizedWord.GetHashCode()))
-                                {
-                                    wordFrequency[normalizedWord.GetHashCode()]++;
-                                }
-                                else
-                                {
-                                    wordFrequency[normalizedWord.GetHashCode()] = 1;
-                                }
+                            hashcodeWord.Add(normalizedWord.GetHashCode());
+                               
                             }
                         }
 
                         fs.Close();
                         reader.Close();
                     }
-
+                    hashcodeWord.Sort();
                 }
 
-                var top10Words = wordFrequency
-                     .Where(entry => entry.Value >1)
-                    .OrderByDescending(s => s.Value)
-                    .Take(10)
-                    .Select(entry => entry.Key);
-                List<string> frequentWords = new List<string>();
-                foreach (var word in top10Words)
+            List<int> topTenhashCode = new List<int>();
+            List<int> counts = new List<int>();
+            int count = 1;
+            for (int i = 0; i < hashcodeWord.Count - 1; i++)
+            {
+                if (hashcodeWord[i] == hashcodeWord[i + 1])
                 {
-                    foreach (string filePath in datFiles)
+                    count++;
+                }
+                else
+                {
+                    counts.Add(count);
+                    topTenhashCode.Add(hashcodeWord[i]);
+                    count = 1;
+                    if (counts.Count > 10)
                     {
-                        using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                        using (StreamReader reader = new StreamReader(fs))
+                        int min = counts.Min();
+                        int minIndex = counts.IndexOf(min);
+                        counts.RemoveAt(minIndex);
+                        topTenhashCode.RemoveAt(minIndex);
+                    }
+                }
+            }
+            List<string> frequentWords = new List<string>();
+            bool shouldBreak = false;
+                foreach (string filePath in datFiles)
+                {
+
+                    using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                    using (StreamReader reader = new StreamReader(fs))
+                    {
+                        string line;
+                        while ((line = reader.ReadLine()) != null)
                         {
-                            string line;
-                            while ((line = reader.ReadLine()) != null)
+                            var words = line.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var word in words)
                             {
-                                var words = line.Split(';', StringSplitOptions.RemoveEmptyEntries);
-                                foreach (var wordInDatFiles in words)
+                                string normalizedWord = word.ToLower();
+                            foreach (var item in topTenhashCode)
+                            {
+                                if(item == normalizedWord.GetHashCode())
                                 {
-                                    string normalizedWord = wordInDatFiles.ToLower();
-                                if (word == normalizedWord.GetHashCode())
-                                {
-                                    if (!frequentWords.Contains(normalizedWord))
+                                    if(!frequentWords.Contains(normalizedWord))
                                     {
                                         frequentWords.Add(normalizedWord);
-
+                                        if (frequentWords.Count > 10)
+                                        {
+                                            shouldBreak = true;
+                                            break;
+                                        }
                                     }
                                 }
-                                }
-                            
                             }
+
+                        }
+                        }
+
                         fs.Close();
                         reader.Close();
                     }
-                  
+                if (shouldBreak) break;
                 }
-                }
+                
 
+            
 
-
-                return frequentWords;
+            return frequentWords;
 
 
             }
